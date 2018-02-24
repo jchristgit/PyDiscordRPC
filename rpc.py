@@ -2,9 +2,15 @@ import asyncio
 import json
 import os
 import struct
+import subprocess
 import sys
 import time
 import uuid
+
+
+def script(action):
+    r = subprocess.run(["osascript", "-e", f"tell app \"itunes\" to {action}"], stdout=subprocess.PIPE)
+    return r.stdout.decode('utf-8')
 
 
 class DiscordRPC:
@@ -45,37 +51,29 @@ class DiscordRPC:
             reader_protocol = asyncio.StreamReaderProtocol(self.sock_reader, loop=self.loop)
             self.sock_writer, _ = await self.loop.create_pipe_connection(lambda: reader_protocol, self.ipc_path)
 
-        self.send_data(0, {'v': 1, 'client_id': '352253827933667338'})
+        self.send_data(0, {'v': 1, 'client_id': '417089899481792533'})
         data = await self.sock_reader.read(1024)
         code, length = struct.unpack('<ii', data[:8])
         print(f'OP Code: {code}; Length: {length}\nResponse:\n{json.loads(data[8:].decode("utf-8"))}\n')
 
     def send_rich_presence(self):
         current_time = time.time()
+        track_name = script("return name of current track")
+        artist = script("return artist of current track")
+        playing = script("return player state is playing")
         payload = {
             'cmd': 'SET_ACTIVITY',
             'args': {
                 'activity': {
-                    'state': 'am sad',
-                    'details': ':(',
+                    'state': f'Playing {track_name} by {artist}' if playing else 'Paused',
+                    'details': 'yee boie',
                     'timestamps': {
                         'start': int(current_time),
                         'end': int(current_time) + (5 * 60)
                     },
                     'assets': {
-                        'large_text': '>tfw no gf',
-                        'large_image': 'feels',
-                        'small_text': 'that\'s me',
-                        'small_image': 'gio'
-                    },
-                    'party': {
-                        'id': '4chan',
-                        'size': [21, 42]  # [Minimum, Maximum]
-                    },
-                    'secrets': {
-                        'match': 'install_gentoo',
-                        'join': 'communism_is_bad',
-                        'spectate': 'b0nzybuddy',
+                        'large_text': 'iTunes',
+                        'large_image': 'itunes'
                     },
                     'instance': True
                 },
