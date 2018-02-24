@@ -51,26 +51,25 @@ class DiscordRPC:
             reader_protocol = asyncio.StreamReaderProtocol(self.sock_reader, loop=self.loop)
             self.sock_writer, _ = await self.loop.create_pipe_connection(lambda: reader_protocol, self.ipc_path)
 
-        self.send_data(0, {'v': 1, 'client_id': '417089899481792533'})
+        self.send_data(0, {'v': 1, 'client_id': '409024517617221643'})
         data = await self.sock_reader.read(1024)
         code, length = struct.unpack('<ii', data[:8])
         print(f'OP Code: {code}; Length: {length}\nResponse:\n{json.loads(data[8:].decode("utf-8"))}\n')
 
     def send_rich_presence(self):
-        current_time = time.time()
+        current_time = int(time.time())
+        duration = script("duration of current track")
+        player_pos = script("player position")
         track_name = script("return name of current track")
         artist = script("return artist of current track")
-        playing = script("return player state is playing")
+        playing = script("return player state is playing") == 'true\n'
+        left = current_time + (int(duration.split('.')[0]) - int(player_pos.split('.')[0]))
         payload = {
             'cmd': 'SET_ACTIVITY',
             'args': {
                 'activity': {
-                    'state': f'Playing {track_name} by {artist}' if playing else 'Paused',
-                    'details': 'yee boie',
-                    'timestamps': {
-                        'start': int(current_time),
-                        'end': int(current_time) + (5 * 60)
-                    },
+                    'state': artist if playing else 'Paused',
+                    'details': track_name,
                     'assets': {
                         'large_text': 'iTunes',
                         'large_image': 'itunes'
@@ -81,12 +80,18 @@ class DiscordRPC:
             },
             'nonce': str(uuid.uuid4())
         }
+        if playing:
+            payload['args']['activity']['timestamps'] = {
+                'end': left
+            }
         self.send_data(1, payload)
 
     async def run(self):
         await self.handshake()
-        self.send_rich_presence()
-        await self.read_output()
+        while True:
+            self.send_rich_presence()
+            await asyncio.sleep(15)
+        # await self.read_output()
 
     def close(self):
         self.sock_writer.close()
