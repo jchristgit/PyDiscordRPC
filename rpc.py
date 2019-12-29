@@ -9,7 +9,7 @@ import uuid
 
 
 def script(action):
-    r = subprocess.run(["osascript", "-e", f"tell app \"itunes\" to {action}"], stdout=subprocess.PIPE)
+    r = subprocess.run(["osascript", "-e", f"tell app \"music\" to {action}"], stdout=subprocess.PIPE)
     return r.stdout.decode('utf-8')
 
 
