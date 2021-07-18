@@ -89,8 +89,12 @@ class DiscordRPC:
     async def run(self):
         await self.handshake()
         while True:
-            self.send_rich_presence()
-            await asyncio.sleep(15)
+            try:
+                self.send_rich_presence()
+                await asyncio.sleep(10)
+            except KeyboardInterrupt:
+                break
+        self.close()
         # await self.read_output()
 
     def close(self):
